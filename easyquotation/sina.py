@@ -1,6 +1,6 @@
 # coding:utf8
-import random
 import re
+import time
 
 from . import basequotation
 
@@ -17,19 +17,18 @@ class Sina(basequotation.BaseQuotation):
         r"(\w{2}\d+)=[^\s]([^\s,]+?)%s%s"
         % (r",([\.\d]+)" * 29, r",([-\.\d:]+)" * 2)
     )
+    del_null_data_stock = re.compile(
+        r"(\w{2}\d+)=\"\";"
+    )
 
     @property
     def stock_api(self) -> str:
-        return f"http://hq.sinajs.cn/rn={self._random()}&list="
-
-    @staticmethod
-    def _random(length=13) -> str:
-        start = 10 ** (length - 1)
-        end = (10 ** length) - 1
-        return str(random.randint(start, end))
+        return f"http://hq.sinajs.cn/rn={int(time.time() * 1000)}&list="
 
     def format_response_data(self, rep_data, prefix=False):
         stocks_detail = "".join(rep_data)
+        stocks_detail = self.del_null_data_stock.sub('', stocks_detail)
+        stocks_detail = stocks_detail.replace(' ', '')
         grep_str = self.grep_detail_with_prefix if prefix else self.grep_detail
         result = grep_str.finditer(stocks_detail)
         stock_dict = dict()
